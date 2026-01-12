@@ -1,0 +1,41 @@
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE and editor files
+.vscode-server/
+*.swp
+*.swo
+
+# Bash and shell files
+.bash_history
+.bashrc
+.bash_logout
+.profile
+.wget-hsts
+
+# Node.js
+node_modules/
+npm-debug.log
+
+# Claude Code files
+.claude/
+.claude.json
+.claude.json.backup
+.claude-module/
+
+# Config directories
+.config/
+.cache/
+.local/
+.npm/
+.nvm/
+.ssh/
+.dotnet/
+
+# Old/backup files
+*.backup
+*.bak
+
+# Project folder (seems to be empty/system)
+project/

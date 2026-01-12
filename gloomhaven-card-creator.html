@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gloomhaven RPG Card Creator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e4e4e4;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            color: #ffd700;
+        }
+
+        .workspace {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* Form Panel */
+        .form-panel {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            width: 380px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .form-panel h2 {
+            margin-bottom: 20px;
+            color: #ffd700;
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #ccc;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #444;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.4);
+            color: #fff;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        /* Class Colors */
+        .class-colors {
+            --brute: #4a6fa5;
+            --tinkerer: #8b7355;
+            --spellweaver: #9b4dca;
+            --scoundrel: #2d5a3d;
+            --cragheart: #7a6a5a;
+            --mindthief: #5a4a7a;
+            --sunkeeper: #d4af37;
+            --quartermaster: #6a5a4a;
+            --summoner: #7a4a6a;
+            --nightshroud: #2a2a3a;
+            --plagueherald: #4a7a4a;
+            --berserker: #8b3a3a;
+            --soothsinger: #5a7a8a;
+            --doomstalker: #5a6a4a;
+            --sawbones: #7a8a9a;
+            --elementalist: #6a5aaa;
+            --beasttyrant: #6a4a3a;
+            --custom: #3d3d3d;
+        }
+
+        /* Icon Palette */
+        .icon-palette {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            width: 280px;
+            border: 1px solid rgba(255,255,255,0.2);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .icon-palette h2 {
+            margin-bottom: 15px;
+            color: #ffd700;
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .icon-category {
+            margin-bottom: 15px;
+        }
+
+        .icon-category h3 {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #444;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            border-color: #ffd700;
+            background: rgba(255,215,0,0.2);
+            transform: scale(1.1);
+        }
+
+        .icon-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: invert(1);
+        }
+
+        .icon-btn[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+        }
+
+        .active-field-indicator {
+            font-size: 11px;
+            color: #ffd700;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255,215,0,0.1);
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        /* Card Preview */
+        .preview-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .preview-panel h2 {
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+
+        .card {
+            width: 300px;
+            height: 420px;
+            border-radius: 15px;
+            border: 4px solid #8b7355;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(139,115,85,0.3);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Georgia', serif;
+        }
+
+        .card-bg-brute { background: linear-gradient(180deg, #4a6fa5 0%, #2a3f65 100%); }
+        .card-bg-tinkerer { background: linear-gradient(180deg, #8b7355 0%, #5b4325 100%); }
+        .card-bg-spellweaver { background: linear-gradient(180deg, #9b4dca 0%, #5b2d7a 100%); }
+        .card-bg-scoundrel { background: linear-gradient(180deg, #2d5a3d 0%, #1d3a2d 100%); }
+        .card-bg-cragheart { background: linear-gradient(180deg, #7a6a5a 0%, #4a3a2a 100%); }
+        .card-bg-mindthief { background: linear-gradient(180deg, #5a4a7a 0%, #3a2a5a 100%); }
+        .card-bg-sunkeeper { background: linear-gradient(180deg, #d4af37 0%, #947f17 100%); }
+        .card-bg-quartermaster { background: linear-gradient(180deg, #6a5a4a 0%, #3a2a1a 100%); }
+        .card-bg-summoner { background: linear-gradient(180deg, #7a4a6a 0%, #4a2a3a 100%); }
+        .card-bg-nightshroud { background: linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%); }
+        .card-bg-plagueherald { background: linear-gradient(180deg, #4a7a4a 0%, #2a4a2a 100%); }
+        .card-bg-berserker { background: linear-gradient(180deg, #8b3a3a 0%, #5b1a1a 100%); }
+        .card-bg-soothsinger { background: linear-gradient(180deg, #5a7a8a 0%, #3a5a6a 100%); }
+        .card-bg-doomstalker { background: linear-gradient(180deg, #5a6a4a 0%, #3a4a2a 100%); }
+        .card-bg-sawbones { background: linear-gradient(180deg, #7a8a9a 0%, #4a5a6a 100%); }
+        .card-bg-elementalist { background: linear-gradient(180deg, #6a5aaa 0%, #3a2a7a 100%); }
+        .card-bg-beasttyrant { background: linear-gradient(180deg, #6a4a3a 0%, #3a2a1a 100%); }
+        .card-bg-custom { background: linear-gradient(180deg, #3d3d3d 0%, #1a1a1a 100%); }
+
+        .card-inner {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+        }
+
+        /* Card Header */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .card-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffd700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px #000;
+            flex: 1;
+            text-align: center;
+        }
+
+        .card-level {
+            background: linear-gradient(135deg, #8b4513, #654321);
+            color: #ffd700;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            border: 2px solid #ffd700;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        /* Ability Sections */
+        .ability-section {
+            flex: 1;
+            background: rgba(0,0,0,0.4);
+            border-radius: 10px;
+            padding: 12px;
+            margin: 4px 0;
+            border: 2px solid #5a5a5a;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-ability {
+            border-color: #c9a227;
+            background: linear-gradient(180deg, rgba(201,162,39,0.15) 0%, rgba(0,0,0,0.4) 100%);
+        }
+
+        .bottom-ability {
+            border-color: #4a7c59;
+            background: linear-gradient(180deg, rgba(74,124,89,0.15) 0%, rgba(0,0,0,0.4) 100%);
+        }
+
+        .ability-content {
+            flex: 1;
+            color: #e4e4e4;
+            font-size: 12px;
+            line-height: 1.5;
+            overflow: hidden;
+        }
+
+        .ability-content img.ability-icon {
+            height: 1.2em;
+            width: auto;
+            vertical-align: middle;
+            margin: 0 2px;
+            filter: invert(1);
+        }
+
+        .ability-icon-label {
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .top-ability .ability-icon-label {
+            color: #c9a227;
+        }
+
+        .bottom-ability .ability-icon-label {
+            color: #4a7c59;
+        }
+
+        /* Initiative */
+        .initiative-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 6px 0;
+            position: relative;
+        }
+
+        .initiative {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(145deg, #3d3d3d, #1a1a1a);
+            border: 3px solid #8b7355;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 1px 1px 3px #000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 -2px 5px rgba(0,0,0,0.5);
+        }
+
+        /* Decorative Elements */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #ffd700, transparent);
+        }
+
+        .card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #ffd700, transparent);
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: #1a1a1a;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255,215,0,0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #4a7c59, #2d5a3d);
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(74,124,89,0.4);
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, #6a5acd, #483d8b);
+            color: #fff;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(106,90,205,0.4);
+        }
+
+        /* Card Collection */
+        .collection-panel {
+            width: 100%;
+            margin-top: 40px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .collection-panel h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 10px;
+        }
+
+        .card-collection {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .collection-card {
+            position: relative;
+        }
+
+        .collection-card .card {
+            width: 200px;
+            height: 280px;
+            font-size: 0.67em;
+        }
+
+        .collection-card .card-name {
+            font-size: 12px;
+        }
+
+        .collection-card .card-level {
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+        }
+
+        .collection-card .initiative {
+            width: 35px;
+            height: 35px;
+            font-size: 16px;
+        }
+
+        .collection-card .ability-content {
+            font-size: 9px;
+        }
+
+        .remove-card {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            background: #dc3545;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            z-index: 10;
+        }
+
+        .remove-card:hover {
+            transform: scale(1.1);
+        }
+
+        .empty-collection {
+            text-align: center;
+            color: #888;
+            padding: 40px;
+            font-style: italic;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .workspace {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .form-panel, .icon-palette {
+                width: 100%;
+                max-width: 400px;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .form-panel, .preview-panel, h1, .collection-panel h2, .btn-group, .remove-card, .icon-palette {
+                display: none !important;
+            }
+
+            .collection-panel {
+                background: none;
+                border: none;
+                padding: 0;
+            }
+
+            .card-collection {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+
+            .collection-card .card {
+                width: 63mm;
+                height: 88mm;
+                page-break-inside: avoid;
+            }
+        }
+
+        /* Scrollbar styling */
+        .icon-palette::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .icon-palette::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+
+        .icon-palette::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .icon-palette::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gloomhaven RPG Card Creator</h1>
+
+        <div class="workspace">
+            <!-- Form Panel -->
+            <div class="form-panel">
+                <h2>Card Details</h2>
+
+                <div class="form-group">
+                    <label for="cardName">Card Name</label>
+                    <input type="text" id="cardName" placeholder="Enter ability name" value="Crushing Blow">
+                </div>
+
+                <div class="form-group">
+                    <label for="cardClass">Class</label>
+                    <select id="cardClass">
+                        <option value="custom">Custom</option>
+                        <option value="brute">Brute</option>
+                        <option value="tinkerer">Tinkerer</option>
+                        <option value="spellweaver">Spellweaver</option>
+                        <option value="scoundrel">Scoundrel</option>
+                        <option value="cragheart">Cragheart</option>
+                        <option value="mindthief">Mindthief</option>
+                        <option value="sunkeeper">Sunkeeper</option>
+                        <option value="quartermaster">Quartermaster</option>
+                        <option value="summoner">Summoner</option>
+                        <option value="nightshroud">Nightshroud</option>
+                        <option value="plagueherald">Plagueherald</option>
+                        <option value="berserker">Berserker</option>
+                        <option value="soothsinger">Soothsinger</option>
+                        <option value="doomstalker">Doomstalker</option>
+                        <option value="sawbones">Sawbones</option>
+                        <option value="elementalist">Elementalist</option>
+                        <option value="beasttyrant">Beast Tyrant</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cardLevel">Level</label>
+                        <select id="cardLevel">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="X">X</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="initiative">Initiative</label>
+                        <input type="number" id="initiative" min="1" max="99" value="42">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="topAbility">Top Ability (click icons to insert)</label>
+                    <textarea id="topAbility" placeholder="Enter top ability text">Attack +3
+Target all adjacent enemies</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="bottomAbility">Bottom Ability (click icons to insert)</label>
+                    <textarea id="bottomAbility" placeholder="Enter bottom ability text">Move 4
+Jump</textarea>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-add" onclick="addToCollection()">Add to Collection</button>
+                    <button class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                </div>
+            </div>
+
+            <!-- Icon Palette -->
+            <div class="icon-palette">
+                <h2>Icons</h2>
+                <div class="active-field-indicator">
+                    Click a text field, then click an icon to insert
+                </div>
+
+                <div class="icon-category">
+                    <h3>Actions</h3>
+                    <div class="icon-grid" id="actionIcons"></div>
+                </div>
+
+                <div class="icon-category">
+                    <h3>Elements</h3>
+                    <div class="icon-grid" id="elementIcons"></div>
+                </div>
+
+                <div class="icon-category">
+                    <h3>Conditions</h3>
+                    <div class="icon-grid" id="conditionIcons"></div>
+                </div>
+
+                <div class="icon-category">
+                    <h3>Other</h3>
+                    <div class="icon-grid" id="otherIcons"></div>
+                </div>
+            </div>
+
+            <!-- Preview Panel -->
+            <div class="preview-panel">
+                <h2>Live Preview</h2>
+                <div class="card card-bg-custom" id="cardPreview">
+                    <div class="card-inner">
+                        <div class="card-header">
+                            <div class="card-level" id="previewLevel">1</div>
+                            <div class="card-name" id="previewName">Crushing Blow</div>
+                            <div style="width: 28px;"></div>
+                        </div>
+
+                        <div class="ability-section top-ability">
+                            <div class="ability-icon-label">Top Action</div>
+                            <div class="ability-content" id="previewTop">Attack +3
+Target all adjacent enemies</div>
+                        </div>
+
+                        <div class="initiative-container">
+                            <div class="initiative" id="previewInitiative">42</div>
+                        </div>
+
+                        <div class="ability-section bottom-ability">
+                            <div class="ability-icon-label">Bottom Action</div>
+                            <div class="ability-content" id="previewBottom">Move 4
+Jump</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Collection -->
+        <div class="collection-panel">
+            <h2>Card Collection (<span id="cardCount">0</span> cards)</h2>
+            <div class="card-collection" id="cardCollection">
+                <div class="empty-collection">No cards added yet. Create a card above and click "Add to Collection".</div>
+            </div>
+            <div class="btn-group" style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="exportToPDF()">Export to PDF</button>
+                <button class="btn btn-secondary" onclick="clearCollection()">Clear Collection</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Icon definitions
+        const icons = {
+            actions: [
+                { name: 'attack', file: 'attack.svg' },
+                { name: 'move', file: 'move.svg' },
+                { name: 'shield', file: 'shield.svg' },
+                { name: 'heal', file: 'heal.svg' },
+                { name: 'range', file: 'range.svg' },
+                { name: 'target', file: 'target.svg' },
+                { name: 'retaliate', file: 'retaliate.svg' },
+                { name: 'loot', file: 'loot.svg' },
+                { name: 'jump', file: 'jump.svg' },
+                { name: 'fly', file: 'fly.svg' },
+                { name: 'push', file: 'push.svg' },
+                { name: 'pull', file: 'pull.svg' },
+                { name: 'pierce', file: 'pierce.svg' },
+                { name: 'add_target', file: 'add_target.svg' },
+            ],
+            elements: [
+                { name: 'fire', file: 'fire.svg' },
+                { name: 'ice', file: 'ice.svg' },
+                { name: 'wind', file: 'wind.svg' },
+                { name: 'earth', file: 'earth.svg' },
+                { name: 'light', file: 'light.svg' },
+                { name: 'dark', file: 'dark.svg' },
+                { name: 'any_element', file: 'any_element.svg' },
+                { name: 'consume', file: 'consume.svg' },
+            ],
+            conditions: [
+                { name: 'poison', file: 'poison.svg' },
+                { name: 'wound', file: 'wound.svg' },
+                { name: 'immobilize', file: 'immobilize.svg' },
+                { name: 'disarm', file: 'disarm.svg' },
+                { name: 'stun', file: 'stun.svg' },
+                { name: 'muddle', file: 'muddle.svg' },
+                { name: 'curse', file: 'curse.svg' },
+                { name: 'bless', file: 'bless.svg' },
+                { name: 'strengthen', file: 'strengthen.svg' },
+                { name: 'invisible', file: 'invisible.svg' },
+            ],
+            other: [
+                { name: 'experience', file: 'experience.svg' },
+                { name: 'loss', file: 'loss.svg' },
+                { name: 'recover_card', file: 'recover_card.svg' },
+                { name: 'round_bonus', file: 'round_bonus.svg' },
+                { name: 'infinity', file: 'infinity.svg' },
+            ]
+        };
+
+        const ASSET_PATH = 'assets/assets/';
+        let activeTextField = null;
+        let cardCollection = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initIconPalette();
+            initTextFieldTracking();
+            updatePreview();
+        });
+
+        function initIconPalette() {
+            renderIconGrid('actionIcons', icons.actions);
+            renderIconGrid('elementIcons', icons.elements);
+            renderIconGrid('conditionIcons', icons.conditions);
+            renderIconGrid('otherIcons', icons.other);
+        }
+
+        function renderIconGrid(containerId, iconList) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = iconList.map(icon => `
+                <button class="icon-btn" title="${icon.name}" onclick="insertIcon('${icon.name}', '${icon.file}')">
+                    <img src="${ASSET_PATH}${icon.file}" alt="${icon.name}">
+                </button>
+            `).join('');
+        }
+
+        function initTextFieldTracking() {
+            const textFields = ['topAbility', 'bottomAbility'];
+            textFields.forEach(id => {
+                const field = document.getElementById(id);
+                field.addEventListener('focus', () => {
+                    activeTextField = field;
+                    updateActiveFieldIndicator();
+                });
+            });
+            // Set default active field
+            activeTextField = document.getElementById('topAbility');
+        }
+
+        function updateActiveFieldIndicator() {
+            const indicator = document.querySelector('.active-field-indicator');
+            if (activeTextField) {
+                const fieldName = activeTextField.id === 'topAbility' ? 'Top Ability' : 'Bottom Ability';
+                indicator.textContent = `Inserting into: ${fieldName}`;
+                indicator.style.background = 'rgba(255,215,0,0.2)';
+            }
+        }
+
+        function insertIcon(name, file) {
+            if (!activeTextField) {
+                activeTextField = document.getElementById('topAbility');
+            }
+
+            const iconTag = `[${name}]`;
+            const start = activeTextField.selectionStart;
+            const end = activeTextField.selectionEnd;
+            const text = activeTextField.value;
+
+            activeTextField.value = text.substring(0, start) + iconTag + text.substring(end);
+            activeTextField.focus();
+            activeTextField.selectionStart = activeTextField.selectionEnd = start + iconTag.length;
+
+            updatePreview();
+        }
+
+        function parseIconsInText(text) {
+            // Replace [iconname] with actual img tags
+            return text.replace(/\[(\w+)\]/g, (match, iconName) => {
+                const allIcons = [...icons.actions, ...icons.elements, ...icons.conditions, ...icons.other];
+                const icon = allIcons.find(i => i.name === iconName);
+                if (icon) {
+                    return `<img class="ability-icon" src="${ASSET_PATH}${icon.file}" alt="${iconName}" title="${iconName}">`;
+                }
+                return match;
+            }).replace(/\n/g, '<br>');
+        }
+
+        // Initialize live preview updates
+        document.getElementById('cardName').addEventListener('input', updatePreview);
+        document.getElementById('cardClass').addEventListener('change', updatePreview);
+        document.getElementById('cardLevel').addEventListener('change', updatePreview);
+        document.getElementById('initiative').addEventListener('input', updatePreview);
+        document.getElementById('topAbility').addEventListener('input', updatePreview);
+        document.getElementById('bottomAbility').addEventListener('input', updatePreview);
+
+        function updatePreview() {
+            document.getElementById('previewName').textContent = document.getElementById('cardName').value || 'Card Name';
+            document.getElementById('previewLevel').textContent = document.getElementById('cardLevel').value;
+            document.getElementById('previewInitiative').textContent = document.getElementById('initiative').value || '00';
+
+            // Parse icons in ability text
+            document.getElementById('previewTop').innerHTML = parseIconsInText(document.getElementById('topAbility').value || 'Top ability');
+            document.getElementById('previewBottom').innerHTML = parseIconsInText(document.getElementById('bottomAbility').value || 'Bottom ability');
+
+            // Update card background based on class
+            const cardPreview = document.getElementById('cardPreview');
+            const selectedClass = document.getElementById('cardClass').value;
+
+            // Remove all class backgrounds
+            cardPreview.className = 'card';
+            cardPreview.classList.add(`card-bg-${selectedClass}`);
+        }
+
+        function addToCollection() {
+            const card = {
+                name: document.getElementById('cardName').value || 'Unnamed Card',
+                level: document.getElementById('cardLevel').value,
+                initiative: document.getElementById('initiative').value || '00',
+                topAbility: document.getElementById('topAbility').value || '',
+                bottomAbility: document.getElementById('bottomAbility').value || '',
+                cardClass: document.getElementById('cardClass').value
+            };
+
+            cardCollection.push(card);
+            renderCollection();
+        }
+
+        function removeFromCollection(index) {
+            cardCollection.splice(index, 1);
+            renderCollection();
+        }
+
+        function renderCollection() {
+            const container = document.getElementById('cardCollection');
+            document.getElementById('cardCount').textContent = cardCollection.length;
+
+            if (cardCollection.length === 0) {
+                container.innerHTML = '<div class="empty-collection">No cards added yet. Create a card above and click "Add to Collection".</div>';
+                return;
+            }
+
+            container.innerHTML = cardCollection.map((card, index) => `
+                <div class="collection-card">
+                    <button class="remove-card" onclick="removeFromCollection(${index})">×</button>
+                    <div class="card card-bg-${card.cardClass}">
+                        <div class="card-inner">
+                            <div class="card-header">
+                                <div class="card-level">${card.level}</div>
+                                <div class="card-name">${card.name}</div>
+                                <div style="width: 20px;"></div>
+                            </div>
+                            <div class="ability-section top-ability">
+                                <div class="ability-icon-label">Top Action</div>
+                                <div class="ability-content">${parseIconsInText(card.topAbility)}</div>
+                            </div>
+                            <div class="initiative-container">
+                                <div class="initiative">${card.initiative}</div>
+                            </div>
+                            <div class="ability-section bottom-ability">
+                                <div class="ability-icon-label">Bottom Action</div>
+                                <div class="ability-content">${parseIconsInText(card.bottomAbility)}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function clearForm() {
+            document.getElementById('cardName').value = '';
+            document.getElementById('cardLevel').value = '1';
+            document.getElementById('initiative').value = '';
+            document.getElementById('topAbility').value = '';
+            document.getElementById('bottomAbility').value = '';
+            document.getElementById('cardClass').value = 'custom';
+            updatePreview();
+        }
+
+        function clearCollection() {
+            if (confirm('Are you sure you want to clear all cards from the collection?')) {
+                cardCollection = [];
+                renderCollection();
+            }
+        }
+
+        async function exportToPDF() {
+            if (cardCollection.length === 0) {
+                alert('Please add at least one card to the collection before exporting.');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+
+            // A4 dimensions in mm
+            const pageWidth = 210;
+            const pageHeight = 297;
+
+            // Card dimensions (standard card size ~63mm x 88mm)
+            const cardWidth = 63;
+            const cardHeight = 88;
+
+            // Margins and spacing
+            const marginX = 15;
+            const marginY = 15;
+            const spacingX = 5;
+            const spacingY = 5;
+
+            // Cards per row and column
+            const cardsPerRow = 3;
+            const cardsPerCol = 3;
+            const cardsPerPage = cardsPerRow * cardsPerCol;
+
+            const pdf = new jsPDF('portrait', 'mm', 'a4');
+
+            // Get all card elements from collection
+            const cardElements = document.querySelectorAll('#cardCollection .card');
+
+            for (let i = 0; i < cardElements.length; i++) {
+                // Add new page if needed
+                if (i > 0 && i % cardsPerPage === 0) {
+                    pdf.addPage();
+                }
+
+                const cardElement = cardElements[i];
+                const pageIndex = i % cardsPerPage;
+                const row = Math.floor(pageIndex / cardsPerRow);
+                const col = pageIndex % cardsPerRow;
+
+                const x = marginX + col * (cardWidth + spacingX);
+                const y = marginY + row * (cardHeight + spacingY);
+
+                try {
+                    const canvas = await html2canvas(cardElement, {
+                        scale: 3,
+                        backgroundColor: null,
+                        logging: false,
+                        useCORS: true
+                    });
+
+                    const imgData = canvas.toDataURL('image/png');
+                    pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight);
+                } catch (error) {
+                    console.error('Error rendering card:', error);
+                }
+            }
+
+            pdf.save('gloomhaven-cards.pdf');
+        }
+    </script>
+</body>
+</html>
